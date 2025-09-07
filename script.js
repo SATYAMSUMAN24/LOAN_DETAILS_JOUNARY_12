@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setApplicationDate();
     updateEmploymentSubTypeVisibility(); // Initialize employment sub-type visibility
     updateDocumentVisibility(); // Initialize document visibility
-    
+
     // Ensure loan selection page is shown by default
     showLoanSelection();
 });
@@ -31,7 +31,7 @@ function setupEventListeners() {
     selectionButtons.forEach(button => {
         button.addEventListener('click', function(e) {
             e.preventDefault();
-            
+
             const group = this.closest('.selection-group');
             const buttons = group.querySelectorAll('.selection-btn');
             buttons.forEach(btn => btn.classList.remove('active'));
@@ -39,7 +39,7 @@ function setupEventListeners() {
 
             // Get group label to determine what was selected
             const groupLabel = group.querySelector('label').textContent.toLowerCase();
-            
+
             // Handle loan type selection to show/hide sub-type
             if (this.dataset.value === 'vehicle' && groupLabel.includes('loan type')) {
                 const subTypeSection = document.getElementById('loan-sub-type');
@@ -55,7 +55,7 @@ function setupEventListeners() {
             }
 
             // Track employment type changes
-            if (groupLabel.includes('employment type') && !groupLabel.includes('sub')) {
+            if ((groupLabel.includes('employment type') || groupLabel.includes('consumer category')) && !groupLabel.includes('sub')) {
                 formData.employmentType = this.dataset.value;
                 updateEmploymentSubTypeVisibility();
                 updateIncomeFormVisibility();
@@ -69,7 +69,7 @@ function setupEventListeners() {
                 updateIncomeFormVisibility();
                 updatePersonalFormVisibility();
             }
-            
+
             // Save selection data immediately
             saveSelectionData();
         });
@@ -192,12 +192,12 @@ function startApplication() {
     if (!validateLoanSelection()) {
         return;
     }
-    
+
     saveSelectionData();
     currentStep = 1;
     updateStepDisplay();
     updateProgressStepper();
-    
+
     // Ensure forms are updated based on selections
     updateBasicFormVisibility();
     updateEmploymentSubTypeVisibility();
@@ -308,7 +308,7 @@ function validateLoanSelection() {
         showError('Please select a loan type to continue');
         return false;
     }
-    
+
     // Check if vehicle loan is selected and sub-type is required
     if (loanTypeSelected.dataset.value === 'vehicle') {
         const subTypeSection = document.getElementById('loan-sub-type');
@@ -320,41 +320,41 @@ function validateLoanSelection() {
             }
         }
     }
-    
+
     // Check employment type selection
     const employmentTypeSelected = document.querySelector('[data-value="individual"].active, [data-value="non-individual"].active, [data-value="nri"].active');
     if (!employmentTypeSelected) {
         showError('Please select an employment type');
         return false;
     }
-    
+
     // Check employment sub-type selection
     const employmentSubTypeSelected = document.querySelector('.employment-sub-type-btn.active[data-value]');
     if (!employmentSubTypeSelected) {
         showError('Please select an employment sub-type');
         return false;
     }
-    
+
     return true;
 }
 
 function validateDocumentUpload() {
     let requiredDocs = ['bankStatement', 'itrDoc']; // Always required for both individual and non-individual
-    
+
     // Get selected loan type and employment type
     const activeLoanType = document.querySelector('.selection-btn.active[data-value]')?.dataset.value || formData.selections?.loan_type;
     const employmentType = formData.employmentType || 'individual';
     const employmentSubType = formData.employmentSubType || 'salaried';
-    
+
     // Determine if this should be treated as non-individual for document purposes
     const isNonIndividualForDocs = employmentType === 'non-individual' || 
         (employmentType === 'individual' && 
          (employmentSubType === 'llp-partnership' || employmentSubType === 'private-limited'));
-    
+
     if (isNonIndividualForDocs) {
         // NON-INDIVIDUAL LOGIC (including LLP/Partnership and Private Limited individuals):
         requiredDocs.push('gstDoc'); // GST always required for non-individual types
-        
+
         if (activeLoanType === 'vehicle') {
             // Vehicle loan (2wheeler or 4wheeler): ALL 4 documents (GST, bank statement, ITR, dealer invoice)
             requiredDocs.push('dealerInvoice');
@@ -418,7 +418,7 @@ function validateIndividualBasicDetails() {
     } else {
         const cleanAmount = removeCommas(loanAmount);
         const parsedAmount = parseFloat(cleanAmount);
-        
+
         if (!isNaN(parsedAmount) && parsedAmount > 0) {
             formData.loanAmount = parsedAmount;
         } else {
@@ -460,7 +460,7 @@ function validateIndividualBasicDetails() {
                 ovdValid = validatePAN(ovdNumber);
                 break;
         }
-        
+
         if (!ovdValid) {
             showFieldError('ovdNumber', 'Please enter a valid document number');
             isValid = false;
@@ -533,7 +533,7 @@ function validateNonIndividualBasicDetails() {
     } else {
         const cleanAmount = removeCommas(loanAmount);
         const parsedAmount = parseFloat(cleanAmount);
-        
+
         if (!isNaN(parsedAmount) && parsedAmount > 0) {
             formData.loanAmount = parsedAmount;
         } else {
@@ -575,7 +575,7 @@ function validateNonIndividualBasicDetails() {
                 ovdValid = validatePAN(ovdNumber);
                 break;
         }
-        
+
         if (!ovdValid) {
             showFieldError('businessOVDNumber', 'Please enter a valid document number');
             isValid = false;
@@ -785,7 +785,7 @@ function validateNonIndividualPersonalDetails() {
     // Check if at least one director/partner is filled
     const directorName1 = document.getElementById('directorName1').value.trim();
     const directorDin1 = document.getElementById('directorDin1').value.trim();
-    
+
     if (!directorName1 || !directorDin1) {
         showFieldError('directorName1', 'Please enter at least one director/partner name and DIN/LLP number');
         isValid = false;
@@ -1053,7 +1053,7 @@ function showFinalApproval() {
 function showDocumentVerificationPopup(documentType, documentId) {
     // Close any existing verification modals first
     closeAllVerificationModals();
-    
+
     let popupContent = '';
 
     switch(documentType) {
@@ -1155,7 +1155,7 @@ function showDocumentVerificationPopup(documentType, documentId) {
                             </label>
                         </div>
                     </div>
-                    
+
                     <div class="itr-fetch-section" id="itr-fetch-${documentId}" style="display: none;">
                         <form class="verification-form">
                             <div class="form-group">
@@ -1172,7 +1172,7 @@ function showDocumentVerificationPopup(documentType, documentId) {
                             </div>
                         </form>
                     </div>
-                    
+
                     <div class="itr-upload-section" id="itr-upload-${documentId}" style="display: none;">
                         <div class="upload-section">
                             <div class="upload-area" id="upload-area-${documentId}">
@@ -1220,14 +1220,14 @@ function showDocumentVerificationPopup(documentType, documentId) {
                             </label>
                         </div>
                     </div>
-                    
+
                     <div class="notification-message" id="preOwned-notification-${documentId}" style="display: none;">
                         <div class="info-box">
                             <span class="info-icon">ℹ️</span>
                             <p>For pre-owned cars, please contact your nearest branch for further assistance.</p>
                         </div>
                     </div>
-                    
+
                     <div class="fuel-type-section" id="fuelType-section-${documentId}" style="display: none;">
                         <h4>Select Fuel Type:</h4>
                         <div class="checkbox-options">
@@ -1243,7 +1243,7 @@ function showDocumentVerificationPopup(documentType, documentId) {
                             </label>
                         </div>
                     </div>
-                    
+
                     <div class="document-upload-section" id="document-upload-${documentId}" style="display: none;">
                         <div class="upload-section">
                             <div class="upload-area" id="upload-area-${documentId}">
@@ -1371,7 +1371,7 @@ function handleCarTypeSelection(documentId, carType) {
     const preOwnedNotification = document.getElementById(`preOwned-notification-${documentId}`);
     const fuelTypeSection = document.getElementById(`fuelType-section-${documentId}`);
     const documentUploadSection = document.getElementById(`document-upload-${documentId}`);
-    
+
     // Add null checks
     if (!preOwnedCheckbox || !newCarCheckbox || !preOwnedNotification || !fuelTypeSection || !documentUploadSection) {
         console.error('Required elements not found for car type selection:', {
@@ -1383,7 +1383,7 @@ function handleCarTypeSelection(documentId, carType) {
         });
         return;
     }
-    
+
     // Ensure only one checkbox is selected (radio button behavior)
     if (carType === 'preOwned') {
         preOwnedCheckbox.checked = true;
@@ -1391,7 +1391,7 @@ function handleCarTypeSelection(documentId, carType) {
         preOwnedNotification.style.display = 'block';
         fuelTypeSection.style.display = 'none';
         documentUploadSection.style.display = 'none';
-        
+
         // Clear fuel type selection when switching to pre-owned
         clearFuelTypeSelection(documentId);
     } else if (carType === 'newCar') {
@@ -1400,7 +1400,7 @@ function handleCarTypeSelection(documentId, carType) {
         preOwnedNotification.style.display = 'none';
         fuelTypeSection.style.display = 'block';
         documentUploadSection.style.display = 'none';
-        
+
         // Clear fuel type selection when switching to new car
         clearFuelTypeSelection(documentId);
     }
@@ -1413,20 +1413,20 @@ function handleFuelTypeSelection(documentId, fuelType) {
     }
 
     const documentUploadSection = document.getElementById(`document-upload-${documentId}`);
-    
+
     // Add null check
     if (!documentUploadSection) {
         console.error('Document upload section not found for ID:', documentId);
         return;
     }
-    
+
     documentUploadSection.style.display = 'block';
 }
 
 function clearFuelTypeSelection(documentId) {
     const petrolDieselRadio = document.querySelector(`input[name="fuelType-${documentId}"][value="petrol-diesel"]`);
     const evRadio = document.querySelector(`input[name="fuelType-${documentId}"][value="ev"]`);
-    
+
     if (petrolDieselRadio) petrolDieselRadio.checked = false;
     if (evRadio) evRadio.checked = false;
 }
@@ -1440,13 +1440,13 @@ function toggleITRMethod(documentId, method) {
 
     const fetchSection = document.getElementById(`itr-fetch-${documentId}`);
     const uploadSection = document.getElementById(`itr-upload-${documentId}`);
-    
+
     // Add null checks
     if (!fetchSection || !uploadSection) {
         console.error('ITR method sections not found for ID:', documentId);
         return;
     }
-    
+
     if (method === 'fetch') {
         fetchSection.style.display = 'block';
         uploadSection.style.display = 'none';
@@ -1463,7 +1463,7 @@ function setupDragAndDrop(documentId) {
     }
 
     const uploadArea = document.getElementById(`upload-area-${documentId}`);
-    
+
     if (!uploadArea) {
         console.error('Upload area not found for ID:', documentId);
         return;
@@ -1545,35 +1545,35 @@ function verifyDocument(documentId, documentType) {
     if (documentType === 'dealerInvoice') {
         const preOwnedSelected = document.getElementById(`preOwned-${documentId}`)?.checked;
         const newCarSelected = document.getElementById(`newCar-${documentId}`)?.checked;
-        
+
         if (!preOwnedSelected && !newCarSelected) {
             showError('Please select a car type (Pre-owned or New Car)');
             return;
         }
-        
+
         if (preOwnedSelected) {
             // For pre-owned cars, just show notification - no further processing needed
             showSuccess('For pre-owned cars, please contact your nearest branch for further assistance.');
             closeVerificationPopup(documentId);
             return;
         }
-        
+
         if (newCarSelected) {
             const petrolDieselSelected = document.querySelector(`input[name="fuelType-${documentId}"][value="petrol-diesel"]`)?.checked;
             const evSelected = document.querySelector(`input[name="fuelType-${documentId}"][value="ev"]`)?.checked;
-            
+
             if (!petrolDieselSelected && !evSelected) {
                 showError('Please select a fuel type');
                 return;
             }
-            
+
             // Check if PDF is uploaded and form is filled for new car
             const file = window.tempUploadedFiles && window.tempUploadedFiles[documentId];
             if (!file) {
                 showError('Please upload a PDF file first');
                 return;
             }
-            
+
             const form = document.getElementById(`form-${documentId}`);
             if (form) {
                 const requiredFields = form.querySelectorAll('[required]');
@@ -1595,39 +1595,39 @@ function verifyDocument(documentId, documentType) {
             }
         }
     }
-    
+
     // Special validation for ITR
     if (documentType === 'itrDoc') {
         const fetchSelected = document.querySelector(`input[name="itrMethod-${documentId}"][value="fetch"]`)?.checked;
         const uploadSelected = document.querySelector(`input[name="itrMethod-${documentId}"][value="upload"]`)?.checked;
-        
+
         if (!fetchSelected && !uploadSelected) {
             showError('Please select a verification method');
             return;
         }
-        
+
         if (fetchSelected) {
             const assessmentYear = document.getElementById(`assessmentYear-${documentId}`)?.value;
             const userId = document.getElementById(`userId-${documentId}`)?.value;
             const password = document.getElementById(`password-${documentId}`)?.value;
-            
+
             if (!assessmentYear || !userId || !password) {
                 showError('Please fill Assessment Year, User ID and Password for fetching ITR data');
                 return;
             }
         }
-        
+
         if (uploadSelected) {
             const file = window.tempUploadedFiles && window.tempUploadedFiles[documentId];
             if (!file) {
                 showError('Please upload a PDF file first');
                 return;
             }
-            
+
             const assessmentYearUpload = document.getElementById(`assessmentYearUpload-${documentId}`)?.value;
             const grossIncome = document.getElementById(`grossIncome-${documentId}`)?.value;
             const netIncome = document.getElementById(`netIncome-${documentId}`)?.value;
-            
+
             if (!assessmentYearUpload || !grossIncome || !netIncome) {
                 showError('Please fill Assessment Year, gross income and net income');
                 return;
@@ -1642,7 +1642,7 @@ function verifyDocument(documentId, documentType) {
             showError('Please upload a PDF file first');
             return;
         }
-        
+
         const form = document.getElementById(`form-${documentId}`);
         if (form) {
             const requiredFields = form.querySelectorAll('[required]');
@@ -1671,7 +1671,7 @@ function verifyDocument(documentId, documentType) {
             showError('Please upload a PDF file first');
             return;
         }
-        
+
         const form = document.getElementById(`form-${documentId}`);
         if (form) {
             const requiredFields = form.querySelectorAll('[required]');
@@ -1705,7 +1705,7 @@ function verifyDocument(documentId, documentType) {
 
         // Get file reference
         const file = window.tempUploadedFiles && window.tempUploadedFiles[documentId];
-        
+
         // For ITR fetch method, create a dummy file object
         let fileData = file;
         if (documentType === 'itrDoc') {
@@ -1831,7 +1831,7 @@ function closeAllVerificationModals() {
     // Close all verification modals
     const existingModals = document.querySelectorAll('.verification-modal');
     existingModals.forEach(modal => modal.remove());
-    
+
     // Clean up all temp files
     if (window.tempUploadedFiles) {
         window.tempUploadedFiles = {};
@@ -1922,11 +1922,11 @@ function processFileUpload(file, documentId, uploadType, buttonElement) {
 
 function checkAllDocumentsUploaded() {
     let requiredDocs = ['bankStatement', 'itrDoc']; // Always required for both individual and non-individual
-    
+
     // Get selected loan type and employment type
     const activeLoanType = document.querySelector('.selection-btn.active[data-value]')?.dataset.value || formData.selections?.loan_type;
     const employmentType = formData.employmentType || 'individual';
-    
+
     if (employmentType === 'individual') {
         // INDIVIDUAL LOGIC:
         if (activeLoanType === 'vehicle') {
@@ -1937,7 +1937,7 @@ function checkAllDocumentsUploaded() {
     } else if (employmentType === 'non-individual') {
         // NON-INDIVIDUAL LOGIC:
         requiredDocs.push('gstDoc'); // GST always required for non-individual
-        
+
         if (activeLoanType === 'vehicle') {
             // Vehicle loan (2wheeler or 4wheeler): ALL 4 documents (GST, bank statement, ITR, dealer invoice)
             requiredDocs.push('dealerInvoice');
@@ -2059,7 +2059,7 @@ function updateBasicFormVisibility() {
 
 // Update personal form visibility based on employment type
 function updatePersonalFormVisibility() {
-    const individualForm = document.querySelector('#step-2 .form-container:not(#non-individual-personal-form)');
+    const individualForm = document.getElementById('individual-personal-form');
     const nonIndividualForm = document.getElementById('non-individual-personal-form');
 
     if (!individualForm || !nonIndividualForm) return;
@@ -2119,29 +2119,29 @@ function updateEmploymentSubTypeVisibility() {
         if (employmentType === 'non-individual') {
             // For non-individual, only show LLP/Partnership and Private Limited
             if (buttonValue === 'llp-partnership' || buttonValue === 'private-limited') {
-                button.style.display = 'block';
+                button.style.display = 'inline-block';
             } else {
                 button.style.display = 'none';
                 // Remove active class if hidden button was active
                 if (button.classList.contains('active')) {
                     button.classList.remove('active');
                 }
-            }
-        } else if (employmentType === 'individual') {
-            // For individual, show all except LLP/Partnership and Private Limited
-            if (buttonValue === 'llp-partnership' || buttonValue === 'private-limited') {
-                button.style.display = 'none';
-                // Remove active class if hidden button was active
-                if (button.classList.contains('active')) {
-                    button.classList.remove('active');
-                }
-            } else {
-                button.style.display = 'block';
             }
         } else if (employmentType === 'nri') {
             // For NRI, show only salaried and self-employed
-            if (buttonValue === 'salaried' || buttonValue === 'self-employed') {
-                button.style.display = 'block';
+            if (buttonValue === 'salaried' || buttonValue === 'self-professional') {
+                button.style.display = 'inline-block';
+            } else {
+                button.style.display = 'none';
+                // Remove active class if hidden button was active
+                if (button.classList.contains('active')) {
+                    button.classList.remove('active');
+                }
+            }
+        } else {
+            // For individual, show only salaried and self-professional, hide LLP/Partnership and Private Limited
+            if (buttonValue === 'salaried' || buttonValue === 'self-professional') {
+                button.style.display = 'inline-block';
             } else {
                 button.style.display = 'none';
                 // Remove active class if hidden button was active
@@ -2153,10 +2153,24 @@ function updateEmploymentSubTypeVisibility() {
     });
 
     // If no employment sub-type is selected after filtering, select the first visible one
-    const activeSubType = document.querySelector('.employment-sub-type-btn.active:not([style*="none"])');
-    if (!activeSubType) {
-        const firstVisible = document.querySelector('.employment-sub-type-btn:not([style*="none"])');
-        if (firstVisible && firstVisible.style.display !== 'none') {
+    const activeSubType = document.querySelector('.employment-sub-type-btn.active');
+    const isActiveVisible = activeSubType && activeSubType.style.display === 'inline-block';
+
+    if (!isActiveVisible) {
+        // Find first visible button (display is inline-block and not none)
+        const allButtons = document.querySelectorAll('.employment-sub-type-btn');
+        let firstVisible = null;
+
+        allButtons.forEach(btn => {
+            if (btn.style.display === 'inline-block' && !firstVisible) {
+                firstVisible = btn;
+            }
+        });
+
+        if (firstVisible) {
+            // Clear all active states first
+            allButtons.forEach(btn => btn.classList.remove('active'));
+
             firstVisible.classList.add('active');
             selectedEmploymentSubType = firstVisible.dataset.value;
             formData.employmentSubType = firstVisible.dataset.value;
@@ -2174,21 +2188,21 @@ function updateEmploymentSubTypeVisibility() {
 function updateDocumentVisibility() {
     const gstDocument = document.getElementById('gstDocument');
     const dealerInvoiceDocument = document.getElementById('dealerInvoice')?.closest('.upload-item');
-    
+
     // Get selected loan type from formData or active selection
     const activeLoanType = document.querySelector('.selection-btn.active[data-value]')?.dataset.value || formData.selections?.loan_type;
     const employmentType = formData.employmentType || 'individual';
     const employmentSubType = formData.employmentSubType || 'salaried';
-    
+
     // Hide all optional documents by default
     if (gstDocument) gstDocument.style.display = 'none';
     if (dealerInvoiceDocument) dealerInvoiceDocument.style.display = 'none';
-    
+
     // Determine if this should be treated as non-individual for document purposes
     const isNonIndividualForDocs = employmentType === 'non-individual' || 
         (employmentType === 'individual' && 
          (employmentSubType === 'llp-partnership' || employmentSubType === 'private-limited'));
-    
+
     if (isNonIndividualForDocs) {
         // NON-INDIVIDUAL LOGIC (including LLP/Partnership and Private Limited individuals):
         if (activeLoanType === 'vehicle') {
@@ -2251,22 +2265,30 @@ function simulateSteps() {
 function formatNumberWithCommas(num) {
     // Handle both string and number inputs
     const str = num.toString();
-    
+
     // Split on decimal point to handle decimals properly
     const parts = str.split('.');
-    
+
     // Format the integer part with commas
     parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    
+
     // Rejoin with decimal point if there was one
     return parts.join('.');
 }
 
 function removeCommas(str) {
-    if (!str || typeof str !== 'string') {
+    if (!str) {
         return '0';
     }
-    return str.replace(/,/g, '').trim();
+
+    // Convert to string if it's a number
+    const stringValue = typeof str === 'string' ? str : str.toString();
+
+    // Remove commas and trim whitespace
+    const cleaned = stringValue.replace(/,/g, '').trim();
+
+    // Return '0' if empty string or invalid
+    return cleaned === '' ? '0' : cleaned;
 }
 
 // Setup number formatting for loan amount and income fields
@@ -2284,13 +2306,13 @@ function setupNumberFormatting() {
             input.addEventListener('keypress', function(e) {
                 const char = String.fromCharCode(e.which);
                 const currentValue = e.target.value;
-                
+
                 // Allow digits, decimal point (only one), and backspace/delete
                 if (!/[0-9.]/.test(char) && e.which !== 8 && e.which !== 46) {
                     e.preventDefault();
                     return;
                 }
-                
+
                 // Prevent multiple decimal points
                 if (char === '.' && currentValue.includes('.')) {
                     e.preventDefault();
@@ -2300,16 +2322,16 @@ function setupNumberFormatting() {
 
             input.addEventListener('input', function(e) {
                 let value = removeCommas(e.target.value);
-                
+
                 // Remove any non-numeric characters except decimal point
                 value = value.replace(/[^0-9.]/g, '');
-                
+
                 // Ensure only one decimal point
                 const parts = value.split('.');
                 if (parts.length > 2) {
                     value = parts[0] + '.' + parts.slice(1).join('');
                 }
-                
+
                 if (value !== '' && !isNaN(value)) {
                     e.target.value = formatNumberWithCommas(value);
                 } else if (value === '') {
@@ -2399,38 +2421,61 @@ function setupTenureSlider() {
 function calculateEMI() {
     // Get loan amount from form data or current input fields
     let principal = formData.loanAmount;
-    
+
     // If no loan amount in formData, try to get it from current input
-    if (!principal || isNaN(principal)) {
+    if (!principal || isNaN(principal) || principal <= 0) {
         const employmentType = formData.employmentType || 'individual';
         const loanAmountField = employmentType === 'non-individual' ? 
             document.getElementById('businessLoanAmount') : 
             document.getElementById('loanAmount');
-            
+
         if (loanAmountField && loanAmountField.value) {
             const rawValue = removeCommas(loanAmountField.value.trim());
-            principal = parseFloat(rawValue);
+            const parsedValue = parseFloat(rawValue);
+            if (!isNaN(parsedValue) && parsedValue > 0) {
+                principal = parsedValue;
+                formData.loanAmount = principal;
+            }
         }
     }
-    
+
     // Fallback to default if still invalid
     if (!principal || isNaN(principal) || principal <= 0) {
         principal = 1000000; // Default 10 lakhs
         formData.loanAmount = principal;
     }
-    
-    const rate = (formData.interestRate || 8.5) / 100 / 12;
+
+    // Ensure we have valid interest rate and tenure
+    const interestRate = formData.interestRate || 8.5;
     const tenure = formData.tenure || 84;
 
-    const emi = (principal * rate * Math.pow(1 + rate, tenure)) / (Math.pow(1 + rate, tenure) - 1);
+    // Validate interest rate and tenure
+    if (isNaN(interestRate) || interestRate <= 0 || isNaN(tenure) || tenure <= 0) {
+        console.error('Invalid interest rate or tenure');
+        return;
+    }
+
+    const rate = interestRate / 100 / 12;
+
+    // Calculate EMI using standard formula
+    let emi;
+    if (rate === 0) {
+        // If interest rate is 0, simple division
+        emi = principal / tenure;
+    } else {
+        const rateCompound = Math.pow(1 + rate, tenure);
+        emi = (principal * rate * rateCompound) / (rateCompound - 1);
+    }
 
     const emiDisplay = document.getElementById('dynamicEMI');
     if (emiDisplay) {
-        // Add validation to ensure EMI is a valid number
-        if (!isNaN(emi) && isFinite(emi)) {
+        // Ensure EMI is a valid number
+        if (!isNaN(emi) && isFinite(emi) && emi > 0) {
             emiDisplay.textContent = `Rs. ${Math.round(emi).toLocaleString('en-IN')} p.m.`;
         } else {
-            emiDisplay.textContent = `Rs. ${Math.round(principal * 0.015).toLocaleString('en-IN')} p.m.`; // Fallback calculation
+            // Fallback calculation: simple EMI approximation
+            const fallbackEmi = principal / tenure;
+            emiDisplay.textContent = `Rs. ${Math.round(fallbackEmi).toLocaleString('en-IN')} p.m.`;
         }
     }
 
@@ -2439,7 +2484,7 @@ function calculateEMI() {
     const interestRateDisplay = document.getElementById('displayInterestRate');
 
     if (loanAmountDisplay) {
-        if (!isNaN(principal) && isFinite(principal)) {
+        if (!isNaN(principal) && isFinite(principal) && principal > 0) {
             loanAmountDisplay.textContent = `${(principal / 100000).toFixed(1)} Lakhs`;
         } else {
             loanAmountDisplay.textContent = `10.0 Lakhs`; // Fallback
@@ -2447,7 +2492,8 @@ function calculateEMI() {
     }
 
     if (interestRateDisplay) {
-        interestRateDisplay.textContent = formData.interestRate || '8.50';
+        const displayRate = !isNaN(interestRate) ? interestRate.toFixed(2) : '8.50';
+        interestRateDisplay.textContent = displayRate;
     }
 }
 
@@ -2487,7 +2533,7 @@ function handleOVDTypeChange() {
 
     if (ovdType) {
         ovdNumberGroup.style.display = 'block';
-        
+
         // Update label and placeholder based on OVD type
         switch(ovdType) {
             case 'aadhar':
@@ -2522,7 +2568,7 @@ function handleOVDTypeChange() {
                 alternateOVDOption.style.display = 'none';
                 break;
         }
-        
+
         // Clear previous values
         ovdNumberInput.value = '';
         document.getElementById('useAlternateOVD').checked = false;
@@ -2541,7 +2587,7 @@ function handleBusinessOVDTypeChange() {
 
     if (ovdType) {
         ovdNumberGroup.style.display = 'block';
-        
+
         // Update label and placeholder based on OVD type
         switch(ovdType) {
             case 'aadhar':
@@ -2570,7 +2616,7 @@ function handleBusinessOVDTypeChange() {
                 ovdNumberInput.maxLength = '10';
                 break;
         }
-        
+
         // Clear previous values
         ovdNumberInput.value = '';
     } else {
@@ -2584,7 +2630,7 @@ function handleAlternateOVDChange() {
     const alternateOVDNumberGroup = document.getElementById('alternateOVDNumberGroup');
     const ovdNumberGroup = document.getElementById('ovdNumberGroup');
     const ovdNumber = document.getElementById('ovdNumber');
-    
+
     if (useAlternate) {
         // Show alternate OVD section and hide main OVD number field
         alternateOVDSection.style.display = 'block';
@@ -2598,7 +2644,7 @@ function handleAlternateOVDChange() {
         alternateOVDNumberGroup.style.display = 'none';
         document.getElementById('alternateOVDType').value = '';
         document.getElementById('alternateOVDNumber').value = '';
-        
+
         if (ovdNumber) {
             ovdNumber.style.display = 'block';
             ovdNumber.setAttribute('required', 'required');
@@ -2614,7 +2660,7 @@ function handleAlternateOVDTypeChange() {
 
     if (ovdType) {
         ovdNumberGroup.style.display = 'block';
-        
+
         // Update label and placeholder based on OVD type
         switch(ovdType) {
             case 'aadhar_card':
@@ -2643,7 +2689,7 @@ function handleAlternateOVDTypeChange() {
                 ovdNumberInput.maxLength = '10';
                 break;
         }
-        
+
         // Clear previous values
         ovdNumberInput.value = '';
     } else {
@@ -2655,22 +2701,22 @@ function verifyOVD() {
     const ovdType = document.getElementById('ovdType').value;
     const ovdNumber = document.getElementById('ovdNumber').value.trim();
     const useAlternate = document.getElementById('useAlternateOVD')?.checked;
-    
+
     if (!ovdType) {
         showError('Please select an OVD type first');
         return;
     }
-    
+
     // If using alternate OVD, check alternate fields
     if (useAlternate) {
         const altOvdType = document.getElementById('alternateOVDType').value;
         const altOvdNumber = document.getElementById('alternateOVDNumber').value.trim();
-        
+
         if (!altOvdType || !altOvdNumber) {
             showError('Please complete alternate OVD details');
             return;
         }
-        
+
         // Validate alternate OVD
         let isValid = false;
         switch(altOvdType) {
@@ -2690,22 +2736,22 @@ function verifyOVD() {
                 isValid = validatePAN(altOvdNumber);
                 break;
         }
-        
+
         if (!isValid) {
             showError('Please enter a valid alternate document number');
             return;
         }
-        
+
         // Show OTP modal directly for alternate verification
         showOTPModal(formData.mobile || '9876543210');
         return;
     }
-    
+
     if (!ovdNumber) {
         showError('Please enter the document number');
         return;
     }
-    
+
     // Validate based on OVD type
     let isValid = false;
     switch(ovdType) {
@@ -2725,12 +2771,12 @@ function verifyOVD() {
             isValid = validatePAN(ovdNumber);
             break;
     }
-    
+
     if (!isValid) {
         showError('Please enter a valid document number');
         return;
     }
-    
+
     // Show OVD-specific terms modal
     showOVDTermsModal(ovdType);
 }
@@ -2738,17 +2784,17 @@ function verifyOVD() {
 function verifyBusinessOVD() {
     const ovdType = document.getElementById('businessOVDType').value;
     const ovdNumber = document.getElementById('businessOVDNumber').value.trim();
-    
+
     if (!ovdType) {
         showError('Please select an OVD type first');
         return;
     }
-    
+
     if (!ovdNumber) {
         showError('Please enter the document number');
         return;
     }
-    
+
     // Validate based on OVD type
     let isValid = false;
     switch(ovdType) {
@@ -2768,12 +2814,12 @@ function verifyBusinessOVD() {
             isValid = validatePAN(ovdNumber);
             break;
     }
-    
+
     if (!isValid) {
         showError('Please enter a valid document number');
         return;
     }
-    
+
     // Show OVD-specific terms modal
     showOVDTermsModal(ovdType, true);
 }
@@ -2782,10 +2828,10 @@ function showOVDTermsModal(ovdType, isBusiness = false) {
     const modal = document.getElementById('ovdTermsModal');
     const title = document.getElementById('ovdTermsTitle');
     const content = document.getElementById('ovdTermsContent');
-    
+
     // Store the context for later use
     window.currentOVDContext = { ovdType, isBusiness };
-    
+
     // Update title and content based on OVD type
     switch(ovdType) {
         case 'aadhar':
@@ -2793,9 +2839,9 @@ function showOVDTermsModal(ovdType, isBusiness = false) {
             content.innerHTML = `
                 <h4>Aadhar Authentication Consent</h4>
                 <p><strong>a.</strong> I hereby provide my voluntary consent to TJSB SAHAKARI Bank to use the Aadhaar details provided by me for authentication and agree to the terms and conditions related to Aadhaar consent and updation.</p>
-                
+
                 <p><strong>b.</strong> I am aware that there are various alternate options provided by TJSB SAHAKARI Bank ("Bank") for establishing my identity/address proof for opening a Account / Card / Loan / Investment and agree and confirm that for opening the online Account / Card / Loan / Investment variant i.e. the Account / Card / Loan / Investment, I have voluntarily submitted my Aadhaar number to the Bank and hereby give my consent to the Bank:-</p>
-                
+
                 <div class="terms-list">
                     <p><strong>(i)</strong> to establish my identity / address proof and verify my mobile number by Aadhaar based authentication system through biometric and/or One Time Pin (OTP) and/or Yes/No authentication and/or any other authentication mechanism) independently or verify the genuineness of the Aadhaar through Quick Response (QR) code or through such other manner as set out by UIDAI or any other law from time to time;</p>
                     <p><strong>(ii)</strong> share my Aadhaar detail with UIDAI, NPCI, concerned regulatory or statutory authorities as any be required under applicable laws.</p>
@@ -2803,17 +2849,17 @@ function showOVDTermsModal(ovdType, isBusiness = false) {
                 </div>
 
                 <p><strong>c.</strong> I hereby also agree with the below terms pertaining to Aadhaar based authentication/verification:</p>
-                
+
                 <div class="terms-list">
                     <p><strong>1.</strong> I have been informed that:</p>
                     <p style="margin-left: 20px;"><strong>(a)</strong> upon authentication, UIDAI may share with TJSB SAHAKARI Bank information in nature of my demographic information including photograph, mobile number which TJSB SAHAKARI Bank may use as an identity/address proof for the purpose of account opening;</p>
                     <p style="margin-left: 20px;"><strong>(b)</strong> my Aadhaar details (including my demographic information) shared by UIDAI will not be used for any purpose other than the purpose mentioned above or as per requirements of law;</p>
                     <p style="margin-left: 20px;"><strong>(c)</strong> my biometric information will not be stored by the Bank.</p>
-                    
+
                     <p><strong>2.</strong> I hereby declare that all the above information voluntarily furnished by me is true, correct and complete in all respects.</p>
-                    
+
                     <p><strong>3.</strong> I understand that TJSB SAHAKARI Bank shall be relying upon the information received from UIDAI for processing my Account / Card / Loan / Investment opening formalities.</p>
-                    
+
                     <p><strong>Note:</strong> OTP will be sent to Mobile Number linked with Aadhaar Number.</p>
                 </div>
             `;
@@ -2823,9 +2869,9 @@ function showOVDTermsModal(ovdType, isBusiness = false) {
             content.innerHTML = `
                 <h4>Passport Verification Consent</h4>
                 <p><strong>a.</strong> I hereby provide my voluntary consent to TJSB SAHAKARI Bank to use the Passport details provided by me for identity verification and authentication purposes.</p>
-                
+
                 <p><strong>b.</strong> I confirm that the Passport number and details provided are accurate and belong to me. I understand that TJSB SAHAKARI Bank will verify these details through appropriate government databases.</p>
-                
+
                 <p><strong>c.</strong> I agree that TJSB SAHAKARI Bank may store and use my Passport details for KYC compliance, regulatory requirements, and account/loan processing purposes.</p>
             `;
             break;
@@ -2834,9 +2880,9 @@ function showOVDTermsModal(ovdType, isBusiness = false) {
             content.innerHTML = `
                 <h4>Driving License Verification Consent</h4>
                 <p><strong>a.</strong> I hereby provide my voluntary consent to TJSB SAHAKARI Bank to use the Driving License details provided by me for identity verification and authentication purposes.</p>
-                
+
                 <p><strong>b.</strong> I confirm that the Driving License number and details provided are accurate and belong to me. I understand that TJSB SAHAKARI Bank will verify these details through RTO databases.</p>
-                
+
                 <p><strong>c.</strong> I agree that TJSB SAHAKARI Bank may store and use my Driving License details for KYC compliance, regulatory requirements, and account/loan processing purposes.</p>
             `;
             break;
@@ -2845,9 +2891,9 @@ function showOVDTermsModal(ovdType, isBusiness = false) {
             content.innerHTML = `
                 <h4>Voter ID Verification Consent</h4>
                 <p><strong>a.</strong> I hereby provide my voluntary consent to TJSB SAHAKARI Bank to use the Voter ID details provided by me for identity verification and authentication purposes.</p>
-                
+
                 <p><strong>b.</strong> I confirm that the Voter ID number and details provided are accurate and belong to me. I understand that TJSB SAHAKARI Bank will verify these details through Election Commission databases.</p>
-                
+
                 <p><strong>c.</strong> I agree that TJSB SAHAKARI Bank may store and use my Voter ID details for KYC compliance, regulatory requirements, and account/loan processing purposes.</p>
             `;
             break;
@@ -2856,14 +2902,14 @@ function showOVDTermsModal(ovdType, isBusiness = false) {
             content.innerHTML = `
                 <h4>PAN Card Verification Consent</h4>
                 <p><strong>a.</strong> I hereby provide my voluntary consent to TJSB SAHAKARI Bank to use the PAN details provided by me for identity verification and authentication purposes.</p>
-                
+
                 <p><strong>b.</strong> I confirm that the PAN number and details provided are accurate and belong to me. I understand that TJSB SAHAKARI Bank will verify these details through Income Tax Department databases.</p>
-                
+
                 <p><strong>c.</strong> I agree that TJSB SAHAKARI Bank may store and use my PAN details for KYC compliance, regulatory requirements, and account/loan processing purposes.</p>
             `;
             break;
     }
-    
+
     modal.style.display = 'block';
     document.body.style.overflow = 'hidden';
 }
@@ -2877,26 +2923,26 @@ function closeOVDTermsModal() {
 function agreeToOVDTerms() {
     const context = window.currentOVDContext;
     if (!context) return;
-    
+
     const { ovdType, isBusiness } = context;
-    
+
     // Close the modal first
     closeOVDTermsModal();
-    
+
     showSuccess(`${ovdType.charAt(0).toUpperCase() + ovdType.slice(1)} terms accepted successfully!`);
-    
+
     // Simulate OTP process for Aadhar, direct verification for others
     if (ovdType === 'aadhar') {
         // Show OTP modal
         const mobileNumber = isBusiness ? 
             document.getElementById('businessMobile')?.value : 
             document.getElementById('mobile')?.value;
-        
+
         if (mobileNumber) {
             // Set global variables to indicate this is OVD verification
             window.otpVerificationType = 'ovd';
             window.otpVerificationContext = isBusiness ? 'business' : 'individual';
-            
+
             setTimeout(() => {
                 showOTPModal(mobileNumber);
             }, 1000);
@@ -2918,13 +2964,13 @@ function completeOVDVerification(isBusiness = false) {
     const verifyBtn = isBusiness ? 
         document.getElementById('businessOVDVerifyBtn') : 
         document.getElementById('ovdVerifyBtn');
-    
+
     if (verifyBtn) {
         verifyBtn.textContent = '✓ Verified';
         verifyBtn.style.background = 'linear-gradient(135deg, #28a745, #20c997)';
         verifyBtn.disabled = true;
     }
-    
+
     showSuccess('Document verified successfully!');
 }
 
@@ -3131,10 +3177,30 @@ function hideNotification() {
 // Calculate EMI value for downloads
 function calculateEMIValue() {
     const principal = formData.loanAmount || 1000000;
-    const rate = (formData.interestRate || 8.5) / 100 / 12;
+    const interestRate = formData.interestRate || 8.5;
     const tenure = formData.tenure || 84;
 
-    const emi = (principal * rate * Math.pow(1 + rate, tenure)) / (Math.pow(1 + rate, tenure) - 1);
+    // Validate inputs
+    if (isNaN(principal) || principal <= 0 || isNaN(interestRate) || interestRate < 0 || isNaN(tenure) || tenure <= 0) {
+        return 15000; // Fallback EMI value
+    }
+
+    const rate = interestRate / 100 / 12;
+
+    let emi;
+    if (rate === 0) {
+        // If interest rate is 0, simple division
+        emi = principal / tenure;
+    } else {
+        const rateCompound = Math.pow(1 + rate, tenure);
+        emi = (principal * rate * rateCompound) / (rateCompound - 1);
+    }
+
+    // Ensure valid EMI value
+    if (isNaN(emi) || !isFinite(emi) || emi <= 0) {
+        return Math.round(principal / tenure); // Fallback to simple division
+    }
+
     return Math.round(emi);
 }
 
@@ -3688,7 +3754,7 @@ function handleDocumentUpload(documentId) {
         'gstDoc': 'gstDoc',
         'itrDoc': 'itrDoc'
     };
-    
+
     const documentType = documentTypeMap[documentId] || documentId;
     showDocumentVerificationPopup(documentType, documentId);
 }
@@ -3700,7 +3766,7 @@ let otpTimeRemaining = 120; // 2 minutes
 function showOTPModal(mobileNumber, verificationType = 'mobile') {
     // Close any existing verification modals first
     closeAllVerificationModals();
-    
+
     const modal = document.getElementById('otpVerificationModal');
     const mobileDisplay = document.getElementById('otpMobileNumber');
 
@@ -3793,7 +3859,7 @@ function verifyOTP() {
         const element = document.getElementById(id);
         return element ? element.value.trim() : '';
     });
-    
+
     const otpInput = otpValues.join('');
 
     if (!otpInput || otpInput.length !== 6) {
@@ -3844,7 +3910,7 @@ function verifyOTP() {
         }
 
         closeOTPModal();
-        
+
         // Clear verification type
         window.otpVerificationType = null;
         window.otpVerificationContext = null;
@@ -3857,14 +3923,14 @@ function moveToNext(currentInput, nextInputId) {
         console.error('Current input element is null');
         return;
     }
-    
+
     if (!currentInput.value) {
         return;
     }
-    
+
     // Only allow numeric input
     currentInput.value = currentInput.value.replace(/[^0-9]/g, '');
-    
+
     if (currentInput.value.length === 1 && nextInputId) {
         const nextInput = document.getElementById(nextInputId);
         if (nextInput) {
@@ -3880,15 +3946,15 @@ function handleBackspace(currentInput, prevInputId) {
         console.error('Current input element is null');
         return;
     }
-    
+
     // Use event parameter from the onkeydown attribute
     if (!window.event && !event) {
         console.error('Event object is null');
         return;
     }
-    
+
     const keyEvent = window.event || event;
-    
+
     if (keyEvent.key === 'Backspace' && currentInput.value.length === 0 && prevInputId) {
         const prevInput = document.getElementById(prevInputId);
         if (prevInput) {
@@ -3906,10 +3972,10 @@ let currentTermsCheckboxId = null;
 function handleTermsCheckbox(checkbox, checkboxId) {
     // Prevent the checkbox from being checked immediately
     checkbox.checked = false;
-    
+
     // Store the current checkbox ID
     currentTermsCheckboxId = checkboxId;
-    
+
     // Determine which modal to show based on checkbox type
     if (checkboxId.includes('DirectorDeclaration')) {
         showDirectorTermsModal();
@@ -3925,7 +3991,7 @@ function handleTermsCheckbox(checkbox, checkboxId) {
 function showTermsModal() {
     const modal = document.getElementById('termsModal');
     modal.style.display = 'block';
-    
+
     // Prevent body scrolling when modal is open
     document.body.style.overflow = 'hidden';
 }
@@ -3933,7 +3999,7 @@ function showTermsModal() {
 function closeTermsModal() {
     const modal = document.getElementById('termsModal');
     modal.style.display = 'none';
-    
+
     // Restore body scrolling when modal is closed
     document.body.style.overflow = 'auto';
 }
@@ -3942,7 +4008,7 @@ function agreeToTerms() {
     if (currentTermsCheckboxId) {
         const checkbox = document.getElementById(currentTermsCheckboxId);
         const verifiedSpan = document.getElementById(currentTermsCheckboxId + 'Verified');
-        
+
         if (checkbox) {
             checkbox.checked = true;
             if (verifiedSpan) {
@@ -3957,11 +4023,11 @@ function agreeToTerms() {
 function showDirectorTermsModal() {
     const modal = document.getElementById('directorTermsModal');
     modal.style.display = 'block';
-    
+
     // Determine which checkbox triggered this modal
     const employmentType = formData.employmentType || 'individual';
     currentTermsCheckboxId = employmentType === 'non-individual' ? 'businessAgreeDirectorDeclaration' : 'agreeDirectorDeclaration';
-    
+
     // Prevent body scrolling when modal is open
     document.body.style.overflow = 'hidden';
 }
@@ -3969,7 +4035,7 @@ function showDirectorTermsModal() {
 function closeDirectorTermsModal() {
     const modal = document.getElementById('directorTermsModal');
     modal.style.display = 'none';
-    
+
     // Restore body scrolling when modal is closed
     document.body.style.overflow = 'auto';
 }
@@ -3978,7 +4044,7 @@ function agreeToDirectorTerms() {
     if (currentTermsCheckboxId) {
         const checkbox = document.getElementById(currentTermsCheckboxId);
         const verifiedSpan = document.getElementById(currentTermsCheckboxId + 'Verified');
-        
+
         if (checkbox) {
             checkbox.checked = true;
             if (verifiedSpan) {
@@ -3994,7 +4060,7 @@ function agreeToDirectorTerms() {
 function showBasicTermsModal() {
     const modal = document.getElementById('basicTermsModal');
     modal.style.display = 'block';
-    
+
     // Prevent body scrolling when modal is open
     document.body.style.overflow = 'hidden';
 }
@@ -4002,7 +4068,7 @@ function showBasicTermsModal() {
 function closeBasicTermsModal() {
     const modal = document.getElementById('basicTermsModal');
     modal.style.display = 'none';
-    
+
     // Restore body scrolling when modal is closed
     document.body.style.overflow = 'auto';
 }
@@ -4011,7 +4077,7 @@ function agreeToBasicTerms() {
     if (currentTermsCheckboxId) {
         const checkbox = document.getElementById(currentTermsCheckboxId);
         const verifiedSpan = document.getElementById(currentTermsCheckboxId + 'Verified');
-        
+
         if (checkbox) {
             checkbox.checked = true;
             if (verifiedSpan) {
@@ -4028,7 +4094,7 @@ function showPersonalTermsModal() {
     const modal = document.getElementById('personalTermsModal');
     if (modal) {
         modal.style.display = 'block';
-        
+
         // Prevent body scrolling when modal is open
         document.body.style.overflow = 'hidden';
     } else {
@@ -4040,7 +4106,7 @@ function closePersonalTermsModal() {
     const modal = document.getElementById('personalTermsModal');
     if (modal) {
         modal.style.display = 'none';
-        
+
         // Restore body scrolling when modal is closed
         document.body.style.overflow = 'auto';
     }
@@ -4050,7 +4116,7 @@ function agreeToPersonalTerms() {
     if (currentTermsCheckboxId) {
         const checkbox = document.getElementById(currentTermsCheckboxId);
         const verifiedSpan = document.getElementById(currentTermsCheckboxId + 'Verified');
-        
+
         if (checkbox) {
             checkbox.checked = true;
             if (verifiedSpan) {
